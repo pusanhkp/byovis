@@ -1,60 +1,135 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#071426"><title>뵤비스 BYOVIS</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071426">
+<title>뵤비스 BYOVIS v0.4</title>
 <style>
 :root{--bg:#06101f;--card:#0d1c31;--line:#203754;--blue:#42a5ff;--text:#f4f8ff;--muted:#9dafc6;--green:#61dfa9}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 10%,#17355d 0,#081528 32%,#050b15 70%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;min-height:100vh}
-.app{max-width:520px;margin:auto;padding:24px 18px 40px}.top{display:flex;justify-content:space-between;align-items:center}.logo{text-align:center;flex:1}.logo h1{font-size:38px;margin:14px 0 0;letter-spacing:-2px}.logo small{letter-spacing:6px;color:#dce9ff}.icon{font-size:25px;color:#cbd9ec;background:none;border:0}.tag{text-align:center;color:#b6c5d9;margin:20px 0 14px}.hero{background:linear-gradient(145deg,#0b1d35,#071323);border:1px solid var(--line);border-radius:26px;padding:24px 18px;text-align:center;box-shadow:0 18px 50px #0008}.orb{width:172px;height:172px;margin:8px auto 18px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#174d91,#06275a 58%,#04142d 70%);border:3px solid #68bdff;box-shadow:0 0 18px #3ca9ff,0 0 55px #176bc088;cursor:pointer;user-select:none}.orb.listening{animation:pulse 1s infinite}.mic{font-size:72px}.hero h2{margin:5px 0 4px}.status{color:var(--muted);min-height:24px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}.card{border:1px solid var(--line);background:#0a1729cc;border-radius:20px;padding:18px 14px;min-height:105px;cursor:pointer}.card b{display:block;font-size:18px;margin:7px 0}.card span{font-size:13px;color:var(--muted)}.emoji{font-size:26px}.chat{margin-top:16px;background:#09172a;border:1px solid var(--line);border-radius:20px;padding:15px}.messages{max-height:260px;overflow:auto}.msg{padding:10px 12px;margin:7px 0;border-radius:14px;line-height:1.45}.me{background:#143963;margin-left:42px}.ai{background:#10243d;margin-right:42px}.input{display:flex;gap:8px;margin-top:12px}.input input{flex:1;border:1px solid var(--line);background:#06101f;color:white;border-radius:14px;padding:13px}.input button{border:0;border-radius:14px;background:var(--blue);color:#04101f;font-weight:800;padding:0 17px}.panel{display:none;margin-top:16px;background:#09172a;border:1px solid var(--line);border-radius:20px;padding:16px}.panel.show{display:block}.panel input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#06101f;color:white;margin:8px 0}.row{display:flex;gap:8px}.save{background:var(--green);border:0;padding:11px 15px;border-radius:12px;font-weight:800}.item{padding:10px;border-bottom:1px solid #1a304b;color:#dce8f8}.hint{text-align:center;color:#7890ad;font-size:12px;margin-top:16px}@keyframes pulse{50%{transform:scale(1.04);box-shadow:0 0 35px #55b6ff,0 0 75px #1875d0}}
-</style></head>
+.app{max-width:520px;margin:auto;padding:24px 18px 40px}.top{display:flex;justify-content:space-between;align-items:center}.logo{text-align:center;flex:1}.logo h1{font-size:36px;margin:12px 0 0}.logo small{letter-spacing:2px;color:#bcd9ff}.tag{text-align:center;color:var(--muted);margin:10px 0 20px}
+.hero{background:linear-gradient(145deg,#0b1d35,#071323);border:1px solid var(--line);border-radius:26px;padding:22px 18px;text-align:center;box-shadow:0 18px 50px #0008}
+.orb{width:165px;height:165px;margin:8px auto 16px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#174d91,#06275a 58%,#04142d 70%);border:3px solid #68bdff;box-shadow:0 0 18px #3ca9ff,0 0 55px #176b0888;cursor:pointer;user-select:none}
+.orb.listening{animation:pulse 1s infinite}.mic{font-size:68px}.hero h2{margin:4px 0}.status{color:var(--muted);min-height:24px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.card{border:1px solid var(--line);background:#0a1729;border-radius:20px;padding:17px 13px;min-height:94px;cursor:pointer}.card b{display:block;font-size:17px;margin:5px 0}.card span{font-size:13px;color:var(--muted)}.emoji{font-size:25px}
+.panel{display:none;margin-top:16px;background:#09172a;border:1px solid var(--line);border-radius:20px;padding:16px}.panel.show{display:block}.row{display:flex;gap:8px}.row input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#06101f;color:white}
+button.save{border:0;border-radius:12px;padding:0 16px;background:var(--blue);font-weight:800;color:#04101f}.item{padding:12px 2px;border-bottom:1px solid var(--line)}.item small{display:block;color:var(--muted);margin-top:4px}.empty{color:var(--muted);padding:10px 0}
+.chat{margin-top:16px;background:#09172a;border:1px solid var(--line);border-radius:20px;padding:14px}.messages{max-height:230px;overflow:auto}.msg{padding:10px 12px;margin:7px 0;border-radius:14px}.msg.ai{background:#143963}.msg.me{background:#10243d;margin-left:42px}.input{display:flex;gap:8px;margin-top:12px}.input input{flex:1;border:1px solid var(--line);background:#06101f;color:white;border-radius:14px;padding:13px}.input button{border:0;border-radius:14px;background:var(--blue);font-weight:800;padding:0 16px}
+.note{font-size:12px;color:var(--muted);margin-top:13px;text-align:center}
+@keyframes pulse{50%{box-shadow:0 0 35px #67c5ff,0 0 75px #176bff}}
+</style>
+</head>
 <body><main class="app">
-<div class="top"><button class="icon">☰</button><div class="logo"><h1>뵤비스</h1><small>BYOVIS</small></div><button class="icon" onclick="alert('설정은 다음 버전에서 추가할게요.')">⚙</button></div>
-<p class="tag">언제나, 당신 곁의 AI 비서</p>
-<section class="hero"><div class="orb" id="mic"><div class="mic">🎙️</div></div><h2>아빠, 말씀하세요</h2><div class="status" id="status">마이크를 누르면 듣기 시작해요</div></section>
+<div class="top"><div></div><div class="logo"><h1>뵤비스</h1><small>BYOVIS v0.4</small></div><div></div></div>
+<p class="tag">말하면, 기억하고 다시 알려주는 개인 비서</p>
+<section class="hero">
+<div class="orb" id="mic" onclick="startListening()"><div class="mic">🎙️</div></div>
+<h2>아빠, 말씀하세요</h2><div class="status" id="status">마이크를 누르면 듣기 시작해요</div>
+</section>
 <div class="grid">
-<div class="card" onclick="openPanel('todo')"><div class="emoji">✅</div><b>할 일 관리</b><span>해야 할 일을 기록해요</span></div>
-<div class="card" onclick="openPanel('memo')"><div class="emoji">📝</div><b>메모하기</b><span>생각을 저장해요</span></div>
-<div class="card" onclick="say('아직 일정 연동 전이에요. 다음 단계에서 캘린더를 연결해볼게요.')"><div class="emoji">📅</div><b>오늘 일정</b><span>일정 연결 준비중</span></div>
-<div class="card" onclick="doSearch()"><div class="emoji">🔎</div><b>검색하기</b><span>웹에서 찾아봐요</span></div>
+<div class="card" onclick="openMemo()"><div class="emoji">📝</div><b>메모</b><span>저장한 메모 확인</span></div>
+<div class="card" onclick="readMemos()"><div class="emoji">🔊</div><b>메모 읽기</b><span>저장된 메모를 음성으로</span></div>
 </div>
-<section class="panel" id="memo"><b>📝 메모</b><div class="row"><input id="memoInput" placeholder="메모를 입력하세요"><button class="save" onclick="addItem('memo')">저장</button></div><div id="memoList"></div></section>
-<section class="panel" id="todo"><b>✅ 할 일</b><div class="row"><input id="todoInput" placeholder="할 일을 입력하세요"><button class="save" onclick="addItem('todo')">추가</button></div><div id="todoList"></div></section>
-<section class="chat"><div class="messages" id="messages"><div class="msg ai">안녕하세요! 뵤비스입니다. 마이크를 누르거나 아래에 입력해보세요.</div></div><div class="input"><input id="text" placeholder="메시지를 입력하세요" onkeydown="if(event.key==='Enter')sendText()"><button onclick="sendText()">➤</button></div></section>
-<div class="hint">v0.3 · 대화형 음성 메모 · 내용은 이 기기의 브라우저에 저장됩니다.</div>
+<section class="panel" id="memo"><b>📝 메모</b><div class="row" style="margin-top:10px"><input id="memoInput" placeholder="메모를 입력하세요"><button class="save" onclick="addMemo()">저장</button></div><div id="memoList"></div></section>
+<section class="chat"><div class="messages" id="messages"><div class="msg ai">안녕하세요. 뵤비스입니다. “메모해줘”, “메모 보여줘”, “메모 읽어줘”라고 말해보세요.</div></div>
+<div class="input"><input id="text" placeholder="메시지를 입력하세요" onkeydown="if(event.key==='Enter')sendText()"><button onclick="sendText()">전송</button></div></section>
+<div class="note">메모는 현재 이 기기의 브라우저에 저장됩니다.</div>
 </main>
 <script>
-const $=id=>document.getElementById(id); let recognition; let voiceMode='normal'; let restartAfterSpeech=false;
-function speak(t,after){if('speechSynthesis'in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';if(after)u.onend=after;speechSynthesis.speak(u)}else if(after)after()}
-function addMsg(t,c){let d=document.createElement('div');d.className='msg '+c;d.textContent=t;$('messages').appendChild(d);$('messages').scrollTop=9999}
-function say(t,after){addMsg(t,'ai');speak(t,after)}
-function startListening(){if(!recognition)return;try{recognition.start()}catch(e){}}
-function beginMemoMode(){voiceMode='memo';openPanel('memo');$('status').textContent='메모할 내용을 기다리는 중...';say('네, 말씀하세요.',()=>setTimeout(startListening,300))}
-function saveMemoVoice(content){
-  content=content.trim().replace(/^[,:，.\s]+|[.\s]+$/g,'');
-  if(!content){voiceMode='normal';say('메모할 내용을 듣지 못했어요.');return false}
-  let a=JSON.parse(localStorage.getItem('byovis_memo')||'[]');
-  a.unshift({text:content, createdAt:new Date().toISOString()});
-  localStorage.setItem('byovis_memo',JSON.stringify(a));
-  openPanel('memo'); render('memo'); voiceMode='normal';
-  say(content+'. 메모했어요.');
-  return true;
+const $=id=>document.getElementById(id);
+let recognition=null;
+let memoCapture=false;
+let restarting=false;
+
+function speak(text, after){
+  if(!('speechSynthesis' in window)){ if(after) after(); return; }
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='ko-KR';
+  u.onend=()=>{if(after) setTimeout(after,250)};
+  u.onerror=()=>{if(after) setTimeout(after,250)};
+  speechSynthesis.speak(u);
 }
-function answer(t){let s=t.trim();if(!s)return;addMsg(s,'me');
-  if(voiceMode==='memo'){saveMemoVoice(s);return}
-  if(/^(?:뵤비스[,.，\s]*)?(?:메모\s*(?:해\s*줘|해줘|해|할게|할래)|기억\s*(?:해\s*줘|해줘)|적어\s*(?:줘| 줘)|메모)$/.test(s)){beginMemoMode();return}
-  let memo='';
-  if(/^메모(?:해줘|해 줘|해|저장)?[,:，.\s]+(.+)/.test(s)) memo=s.match(/^메모(?:해줘|해 줘|해|저장)?[,:，.\s]+(.+)/)[1];
-  else if(/^(.+?)(?:라고 )?(?:메모해줘|메모해 줘|메모해|기억해줘|기억해 줘|기억해)$/.test(s)) memo=s.match(/^(.+?)(?:라고 )?(?:메모해줘|메모해 줘|메모해|기억해줘|기억해 줘|기억해)$/)[1];
-  if(memo && saveMemoVoice(memo)) return;
-  let a;if(/안녕|뵤비스/.test(s))a='네, 여기 있어요. 무엇을 도와드릴까요?';else if(/할 ?일/.test(s)){openPanel('todo');a='할 일 목록을 열었어요.'}else if(/시간/.test(s))a='지금은 '+new Date().toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'})+'이에요.';else if(/날짜|오늘/.test(s))a='오늘은 '+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'})+'이에요.';else a='아직 배우는 중이에요. 메모가 필요하면 메모해줘라고 말씀해 주세요.';setTimeout(()=>say(a),250)}
-function sendText(){let i=$('text'),t=i.value;i.value='';answer(t)}
-function openPanel(id){['memo','todo'].forEach(x=>$(x).classList.toggle('show',x===id));render(id)}
-function addItem(type){let inp=$(type+'Input'),v=inp.value.trim();if(!v)return;let a=JSON.parse(localStorage.getItem('byovis_'+type)||'[]');a.unshift(type==='memo'?{text:v,createdAt:new Date().toISOString()}:v);localStorage.setItem('byovis_'+type,JSON.stringify(a));inp.value='';render(type)}
-function render(type){let a=JSON.parse(localStorage.getItem('byovis_'+type)||'[]'),el=$(type+'List');el.innerHTML=a.map((x,i)=>{let text=typeof x==='string'?x:x.text;let time=(type==='memo'&&x.createdAt)?`<small style="display:block;color:#7188a5;margin-top:4px">${new Date(x.createdAt).toLocaleString('ko-KR')}</small>`:'';return `<div class="item">${escapeHtml(text)}${time}<button onclick="event.stopPropagation();del('${type}',${i})" style="float:right;background:none;border:0;color:#7188a5;font-size:18px">×</button></div>`}).join('')||'<div class="item">아직 저장된 내용이 없어요.</div>'}
-function del(type,i){let a=JSON.parse(localStorage.getItem('byovis_'+type)||'[]');a.splice(i,1);localStorage.setItem('byovis_'+type,JSON.stringify(a));render(type)}
-function escapeHtml(s){let d=document.createElement('div');d.textContent=s;return d.innerHTML}
-function doSearch(){let q=prompt('무엇을 검색할까요?');if(q)location.href='https://www.google.com/search?q='+encodeURIComponent(q)}
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){recognition=new SR();recognition.lang='ko-KR';recognition.interimResults=false;recognition.continuous=false;recognition.onstart=()=>{$('mic').classList.add('listening');$('status').textContent=voiceMode==='memo'?'메모할 내용을 말씀하세요...':'듣고 있어요...'};recognition.onend=()=>{$('mic').classList.remove('listening');if(voiceMode!=='memo')$('status').textContent='마이크를 누르면 듣기 시작해요'};recognition.onerror=e=>{if(e.error==='no-speech'&&voiceMode==='memo'){$('status').textContent='말씀을 못 들었어요. 마이크를 눌러 다시 말씀해 주세요.'}else $('status').textContent='음성 인식 오류: '+e.error};recognition.onresult=e=>answer(e.results[0][0].transcript);$('mic').onclick=()=>startListening()}else{$('mic').onclick=()=>alert('이 브라우저는 음성인식을 지원하지 않아요. Chrome 계열 브라우저에서 테스트해 주세요.');$('status').textContent='텍스트 입력으로 먼저 사용해보세요.'}
-render('memo');render('todo');
+function addMsg(text,who='ai'){
+  const d=document.createElement('div'); d.className='msg '+who; d.textContent=text;
+  $('messages').appendChild(d); $('messages').scrollTop=99999;
+}
+function getMemos(){try{return JSON.parse(localStorage.getItem('byovis-memos')||'[]')}catch(e){return []}}
+function saveMemos(a){localStorage.setItem('byovis-memos',JSON.stringify(a))}
+function cleanCommand(s){return s.trim().replace(/[.!?。]/g,'').replace(/\s+/g,' ')}
+function saveMemoText(text){
+  text=text.trim().replace(/^[,.\s]+|[,.\s]+$/g,'');
+  if(!text){say('메모할 내용을 말씀해주세요.');return}
+  const a=getMemos();
+  a.unshift({text, time:new Date().toLocaleString('ko-KR')});
+  saveMemos(a); renderMemos(); addMsg('메모했어요: '+text);
+  speak(text+' 메모했어요.');
+}
+function addMemo(){const v=$('memoInput').value.trim();if(!v)return;saveMemoText(v);$('memoInput').value=''}
+function renderMemos(){
+  const a=getMemos(), box=$('memoList'); box.innerHTML='';
+  if(!a.length){box.innerHTML='<div class="empty">저장된 메모가 없습니다.</div>';return}
+  a.forEach(x=>{const d=document.createElement('div');d.className='item';d.innerHTML='<b></b><small></small>';d.querySelector('b').textContent=x.text;d.querySelector('small').textContent=x.time;box.appendChild(d)})
+}
+function openMemo(){ $('memo').classList.add('show'); renderMemos(); $('memo').scrollIntoView({behavior:'smooth'}); }
+function showMemosByVoice(){
+  openMemo(); const n=getMemos().length;
+  const t=n?`저장된 메모 ${n}개를 화면에 보여드릴게요.`:'저장된 메모가 없어요.';
+  addMsg(t); speak(t);
+}
+function readMemos(){
+  const a=getMemos(); openMemo();
+  if(!a.length){say('저장된 메모가 없어요.');return}
+  const text='저장된 메모는 '+a.length+'개입니다. '+a.map((x,i)=>(i+1)+'번째, '+x.text).join('. ');
+  addMsg(text); speak(text);
+}
+function say(t){addMsg(t);speak(t)}
+function enterMemoCapture(){
+  memoCapture=true; addMsg('네, 말씀하세요.');
+  speak('네, 말씀하세요.',()=>startListening(true));
+}
+function handleCommand(raw){
+  const s=cleanCommand(raw);
+  // 조회 명령을 저장 명령보다 반드시 먼저 검사
+  if(/메모\s*(보여\s*줘|보여줘|확인\s*해\s*줘|확인해줘|목록)/.test(s)){showMemosByVoice();return}
+  if(/메모\s*(읽어\s*줘|읽어줘|읽어\s*봐|읽어봐)/.test(s)){readMemos();return}
+
+  // “내용 + 메모해줘” / “메모해줘 + 내용”
+  const memoWords='(?:메모\\s*해\\s*줘|메모해줘|기억\\s*해\\s*줘|기억해줘|적어\\s*줘|적어줘)';
+  let re=new RegExp('^'+memoWords+'\\s*(.*)$');
+  let m=s.match(re);
+  if(m){
+    if(m[1] && m[1].trim()) saveMemoText(m[1].trim());
+    else enterMemoCapture();
+    return;
+  }
+  re=new RegExp('^(.*?)\\s*'+memoWords+'$');
+  m=s.match(re);
+  if(m){
+    if(m[1] && m[1].trim()) saveMemoText(m[1].trim());
+    else enterMemoCapture();
+    return;
+  }
+  say('아직 그 명령은 배우는 중이에요.');
+}
+function startListening(isFollowup=false){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){say('이 브라우저에서는 음성 인식을 지원하지 않아요. 크롬에서 다시 시도해주세요.');return}
+  try{ if(recognition) recognition.abort(); }catch(e){}
+  recognition=new SR(); recognition.lang='ko-KR'; recognition.interimResults=false; recognition.continuous=false;
+  $('mic').classList.add('listening'); $('status').textContent=isFollowup?'메모 내용을 듣고 있어요…':'듣고 있어요…';
+  recognition.onresult=e=>{
+    const t=e.results[0][0].transcript.trim(); addMsg(t,'me');
+    if(memoCapture){memoCapture=false;saveMemoText(t)}else handleCommand(t);
+  };
+  recognition.onerror=e=>{
+    $('status').textContent='다시 마이크를 눌러주세요';
+    if(memoCapture && (e.error==='no-speech'||e.error==='aborted')) memoCapture=false;
+  };
+  recognition.onend=()=>{$('mic').classList.remove('listening');$('status').textContent='마이크를 누르면 듣기 시작해요'};
+  try{recognition.start()}catch(e){}
+}
+function sendText(){const i=$('text'),t=i.value.trim();if(!t)return;i.value='';addMsg(t,'me');if(memoCapture){memoCapture=false;saveMemoText(t)}else handleCommand(t)}
+renderMemos();
 </script></body></html>
