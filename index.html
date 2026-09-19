@@ -21,18 +21,33 @@
 <section class="panel" id="memo"><b>📝 메모</b><div class="row"><input id="memoInput" placeholder="메모를 입력하세요"><button class="save" onclick="addItem('memo')">저장</button></div><div id="memoList"></div></section>
 <section class="panel" id="todo"><b>✅ 할 일</b><div class="row"><input id="todoInput" placeholder="할 일을 입력하세요"><button class="save" onclick="addItem('todo')">추가</button></div><div id="todoList"></div></section>
 <section class="chat"><div class="messages" id="messages"><div class="msg ai">안녕하세요! 뵤비스입니다. 마이크를 누르거나 아래에 입력해보세요.</div></div><div class="input"><input id="text" placeholder="메시지를 입력하세요" onkeydown="if(event.key==='Enter')sendText()"><button onclick="sendText()">➤</button></div></section>
-<div class="hint">1차 프로토타입 · 내용은 이 기기의 브라우저에 저장됩니다.</div>
+<div class="hint">v0.2 · 음성 메모 지원 · 내용은 이 기기의 브라우저에 저장됩니다.</div>
 </main>
 <script>
 const $=id=>document.getElementById(id); let recognition;
 function speak(t){if('speechSynthesis'in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang='ko-KR';speechSynthesis.speak(u)}}
 function addMsg(t,c){let d=document.createElement('div');d.className='msg '+c;d.textContent=t;$('messages').appendChild(d);$('messages').scrollTop=9999}
 function say(t){addMsg(t,'ai');speak(t)}
-function answer(t){let s=t.trim();if(!s)return;addMsg(s,'me');let a;if(/안녕|뵤비스/.test(s))a='네, 여기 있어요. 무엇을 도와드릴까요?';else if(/메모/.test(s)){openPanel('memo');a='메모장을 열었어요.'}else if(/할 ?일/.test(s)){openPanel('todo');a='할 일 목록을 열었어요.'}else if(/시간/.test(s))a='지금은 '+new Date().toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'})+'이에요.';else if(/날짜|오늘/.test(s))a='오늘은 '+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'})+'이에요.';else a='지금은 1차 버전이라 간단한 명령만 가능해요. 다음 단계에서 AI를 연결하면 훨씬 자연스럽게 대화할 수 있어요.';setTimeout(()=>say(a),250)}
+function saveMemoVoice(content){
+  content=content.trim().replace(/^[,:，.\s]+|[.\s]+$/g,'');
+  if(!content)return false;
+  let a=JSON.parse(localStorage.getItem('byovis_memo')||'[]');
+  a.unshift({text:content, createdAt:new Date().toISOString()});
+  localStorage.setItem('byovis_memo',JSON.stringify(a));
+  openPanel('memo'); render('memo');
+  say('메모했어요. '+content);
+  return true;
+}
+function answer(t){let s=t.trim();if(!s)return;addMsg(s,'me');
+  let memo='';
+  if(/^메모(?:해줘|해 줘|해|저장)?[,:，.\s]+(.+)/.test(s)) memo=s.match(/^메모(?:해줘|해 줘|해|저장)?[,:，.\s]+(.+)/)[1];
+  else if(/^(.+?)(?:라고 )?(?:메모해줘|메모해 줘|메모해|기억해줘|기억해 줘|기억해)$/.test(s)) memo=s.match(/^(.+?)(?:라고 )?(?:메모해줘|메모해 줘|메모해|기억해줘|기억해 줘|기억해)$/)[1];
+  if(memo && saveMemoVoice(memo)) return;
+  let a;if(/안녕|뵤비스/.test(s))a='네, 여기 있어요. 무엇을 도와드릴까요?';else if(/^메모$/.test(s)){openPanel('memo');a='메모장을 열었어요.'}else if(/할 ?일/.test(s)){openPanel('todo');a='할 일 목록을 열었어요.'}else if(/시간/.test(s))a='지금은 '+new Date().toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'})+'이에요.';else if(/날짜|오늘/.test(s))a='오늘은 '+new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'long'})+'이에요.';else a='지금은 1차 버전이라 간단한 명령만 가능해요. 다음 단계에서 AI를 연결하면 훨씬 자연스럽게 대화할 수 있어요.';setTimeout(()=>say(a),250)}
 function sendText(){let i=$('text'),t=i.value;i.value='';answer(t)}
 function openPanel(id){['memo','todo'].forEach(x=>$(x).classList.toggle('show',x===id));render(id)}
-function addItem(type){let inp=$(type+'Input'),v=inp.value.trim();if(!v)return;let a=JSON.parse(localStorage.getItem('byovis_'+type)||'[]');a.unshift(v);localStorage.setItem('byovis_'+type,JSON.stringify(a));inp.value='';render(type)}
-function render(type){let a=JSON.parse(localStorage.getItem('byovis_'+type)||'[]'),el=$(type+'List');el.innerHTML=a.map((x,i)=>`<div class="item" onclick="del('${type}',${i})">${escapeHtml(x)} <span style="float:right;color:#7188a5">×</span></div>`).join('')||'<div class="item">아직 저장된 내용이 없어요.</div>'}
+function addItem(type){let inp=$(type+'Input'),v=inp.value.trim();if(!v)return;let a=JSON.parse(localStorage.getItem('byovis_'+type)||'[]');a.unshift(type==='memo'?{text:v,createdAt:new Date().toISOString()}:v);localStorage.setItem('byovis_'+type,JSON.stringify(a));inp.value='';render(type)}
+function render(type){let a=JSON.parse(localStorage.getItem('byovis_'+type)||'[]'),el=$(type+'List');el.innerHTML=a.map((x,i)=>{let text=typeof x==='string'?x:x.text;let time=(type==='memo'&&x.createdAt)?`<small style="display:block;color:#7188a5;margin-top:4px">${new Date(x.createdAt).toLocaleString('ko-KR')}</small>`:'';return `<div class="item">${escapeHtml(text)}${time}<button onclick="event.stopPropagation();del('${type}',${i})" style="float:right;background:none;border:0;color:#7188a5;font-size:18px">×</button></div>`}).join('')||'<div class="item">아직 저장된 내용이 없어요.</div>'}
 function del(type,i){let a=JSON.parse(localStorage.getItem('byovis_'+type)||'[]');a.splice(i,1);localStorage.setItem('byovis_'+type,JSON.stringify(a));render(type)}
 function escapeHtml(s){let d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function doSearch(){let q=prompt('무엇을 검색할까요?');if(q)location.href='https://www.google.com/search?q='+encodeURIComponent(q)}
