@@ -34,6 +34,7 @@ button.save{border:0;border-radius:12px;padding:0 16px;background:var(--blue);fo
 <div class="card" onclick="readMemos()"><div class="emoji">🔊</div><b>메모 읽기</b><span>저장된 메모를 음성으로</span></div>
 <div class="card" onclick="openSchedule()"><div class="emoji">📅</div><b>일정</b><span>날짜별 기억과 일정</span></div>
 <div class="card" onclick="openWeek()"><div class="emoji">🗓️</div><b>주간 일정</b><span>저번·이번·다음 주 일정</span></div>
+<div class="card" onclick="openAI()"><div class="emoji">🧠</div><b>AI 연결</b><span>ChatGPT 연결 준비</span></div>
 <div class="card" onclick="openAlarm()"><div class="emoji">⏰</div><b>알람</b><span>웹 실험용 알람·타이머</span></div>
 <div class="card" onclick="openVoice()"><div class="emoji">🔊</div><b>목소리</b><span>음성·속도·높이 설정</span></div>
 </div>
@@ -71,7 +72,13 @@ button.save{border:0;border-radius:12px;padding:0 16px;background:var(--blue);fo
   <div style="margin-top:12px">음높이 <input id="voicePitch" type="range" min="0.6" max="1.5" step="0.1" value="1" oninput="saveVoiceSettings()"></div>
   <button class="save" style="height:42px;width:100%;margin-top:12px" onclick="testVoice()">이 목소리로 테스트</button>
 </section>
-<section class="chat"><div class="messages" id="messages"><div class="msg ai">안녕하세요. 뵤비스 v0.82입니다. “이번 주 일정 알려줘”, “10분 뒤 알람 맞춰줘”, “내일 7시 알람 맞춰줘”처럼 말해보세요.</div></div>
+<section class="panel" id="aiPanel">
+  <b>🧠 ChatGPT 연결 준비</b>
+  <div class="note" style="text-align:left">보안을 위해 API 키를 이 웹페이지에 직접 저장하지 않습니다. Android 앱/보안 서버 연결 후 모르는 명령을 AI로 보내도록 연결할 예정입니다.</div>
+  <div class="row" style="margin-top:10px"><input id="aiEndpoint" placeholder="AI 연결 주소 (나중에 설정)"><button class="save" onclick="saveAiEndpoint()">저장</button></div>
+  <div id="aiStatus" class="note" style="text-align:left"></div>
+</section>
+<section class="chat"><div class="messages" id="messages"><div class="msg ai">안녕하세요. 뵤비스 v0.83입니다. “이번 주 일정 알려줘”, “10분 뒤 알람 맞춰줘”, “내일 7시 알람 맞춰줘”처럼 말해보세요.</div></div>
 <div class="input"><input id="text" placeholder="메시지를 입력하세요" onkeydown="if(event.key==='Enter')sendText()"><button onclick="sendText()">전송</button></div></section>
 <div class="note">메모는 현재 이 기기의 브라우저에 저장됩니다.</div>
 </main>
@@ -85,6 +92,9 @@ let wakeRecognition=null;
 let commandFromWake=false;
 let resumeWakeAfterSpeech=false;
 let voices=[];
+let commandWatchdog=null;
+function clearCommandWatchdog(){if(commandWatchdog){clearTimeout(commandWatchdog);commandWatchdog=null}}
+function recoverWake(reason=''){clearCommandWatchdog();resumeWakeAfterSpeech=false;commandFromWake=false;try{if(recognition)recognition.abort()}catch(e){};recognition=null;if(wakeMode){$('status').textContent=reason||'다시 호출을 기다리는 중…';setTimeout(startWakeRecognition,650)}}
 
 
 function stopWakeRecognition(){
@@ -105,8 +115,9 @@ function startWakeRecognition(){
       const heard=cleanCommand(raw).replace(/\s/g,'');
       $('status').textContent='들은 말: '+raw;
       // 휴대폰 음성인식은 '뵤니스'를 여러 형태로 받아쓸 수 있어 넓게 허용합니다.
-      const wakeHit=/(뵤니스|뵤비스|비오비스|바이오비스|비요니스|비요비스|뵤니|뵤비)/.test(heard)
-        || ((heard.includes('니스')||heard.includes('비스')) && heard.length<=8);
+      const wakeAliases=['뵤니스','뵤비스','비오비스','바이오비스','비요니스','비요비스','비오니스','비욘이스','비욘스','뵤니','뵤비','보니스','보비스'];
+      const wakeHit=wakeAliases.some(x=>heard.includes(x))
+        || (/^(비|뵤|보|벼).{0,3}(니스|비스|니쓰|비쓰)$/.test(heard) && heard.length<=9);
       if(wakeHit){
         stopWakeRecognition();
         commandFromWake=true;
@@ -143,7 +154,7 @@ function speak(text, after){
   const u=new SpeechSynthesisUtterance(text); u.lang='ko-KR';
   const cfg=getVoiceSettings(); u.rate=cfg.rate; u.pitch=cfg.pitch;
   if(voices[cfg.index]) u.voice=voices[cfg.index];
-  const done=()=>{ if(after) setTimeout(after,250); else if(resumeWakeAfterSpeech && wakeMode){resumeWakeAfterSpeech=false;commandFromWake=false;$('status').textContent='다시 호출을 기다리는 중…';setTimeout(startWakeRecognition,550)} };
+  const done=()=>{ clearCommandWatchdog(); if(after) setTimeout(after,250); else if(resumeWakeAfterSpeech && wakeMode){resumeWakeAfterSpeech=false;commandFromWake=false;$('status').textContent='다시 호출을 기다리는 중…';setTimeout(startWakeRecognition,550)} };
   u.onend=done; u.onerror=done; speechSynthesis.speak(u);
 }
 function addMsg(text,who='ai'){
@@ -267,6 +278,9 @@ function openVoice(){$('voicePanel').classList.add('show');loadVoices();$('voice
 function testVoice(){saveVoiceSettings();speak('안녕하세요. 뵤비스입니다. 이 목소리로 말씀드릴게요.')}
 if('speechSynthesis' in window){speechSynthesis.onvoiceschanged=loadVoices;setTimeout(loadVoices,300)}
 
+function openAI(){$('aiPanel').classList.add('show');const v=localStorage.getItem('byovis-ai-endpoint')||'';$('aiEndpoint').value=v;$('aiStatus').textContent=v?'AI 연결 주소가 저장되어 있어요.':'현재는 로컬 명령 모드입니다.';$('aiPanel').scrollIntoView({behavior:'smooth'})}
+function saveAiEndpoint(){const v=$('aiEndpoint').value.trim();localStorage.setItem('byovis-ai-endpoint',v);$('aiStatus').textContent=v?'연결 주소를 저장했어요. 실제 AI 호출은 보안 연결 단계에서 활성화합니다.':'AI 연결 주소를 비웠어요.'}
+
 function handleCommand(raw){
   const s=cleanCommand(raw);
 
@@ -333,11 +347,11 @@ function startListening(isFollowup=false){
       memoCapture=false;
       const d=parseSpokenDate(t);
       if(d) saveSpokenSchedule(t,d); else saveMemoText(t);
-    }else { if(commandFromWake) resumeWakeAfterSpeech=true; handleCommand(t); }
+    }else { if(commandFromWake){ resumeWakeAfterSpeech=true; clearCommandWatchdog(); commandWatchdog=setTimeout(()=>recoverWake('명령 처리 시간이 길어져 호출 대기로 돌아갑니다.'),8000); } handleCommand(t); }
   };
   recognition.onerror=e=>{
     $('status').textContent='다시 마이크를 눌러주세요';
-    if(memoCapture && (e.error==='no-speech'||e.error==='aborted')) memoCapture=false;
+    if(memoCapture && (e.error==='no-speech'||e.error==='aborted')) memoCapture=false; if(commandFromWake && e.error!=='aborted') setTimeout(()=>recoverWake('음성 인식을 다시 시작합니다.'),500);
   };
   recognition.onend=()=>{
     $('mic').classList.remove('listening');
