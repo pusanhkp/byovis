@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071426">
-<title>뵤비스 BYOVIS v0.8</title>
+<title>뵤비스 BYOVIS v0.81</title>
 <style>
 :root{--bg:#06101f;--card:#0d1c31;--line:#203754;--blue:#42a5ff;--text:#f4f8ff;--muted:#9dafc6;--green:#61dfa9}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 10%,#17355d 0,#081528 32%,#050b15 70%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;min-height:100vh}
@@ -21,7 +21,7 @@ button.save{border:0;border-radius:12px;padding:0 16px;background:var(--blue);fo
 </style>
 </head>
 <body><main class="app">
-<div class="top"><div></div><div class="logo"><h1>뵤비스</h1><small>BYOVIS v0.8</small></div><div></div></div>
+<div class="top"><div></div><div class="logo"><h1>뵤비스</h1><small>BYOVIS v0.81</small></div><div></div></div>
 <p class="tag">말하면, 기억하고 알아서 일정까지 챙겨주는 개인 비서</p>
 <section class="hero">
 <div class="orb" id="mic" onclick="startListening()"><div class="mic">🎙️</div></div>
@@ -78,24 +78,32 @@ function startWakeRecognition(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){wakeMode=false; $('wakeBtn').textContent='👂 호출 대기 시작'; say('이 브라우저에서는 호출 대기를 지원하지 않아요. 크롬에서 다시 시도해주세요.'); return;}
   stopWakeRecognition();
-  const r=new SR(); wakeRecognition=r; r.lang='ko-KR'; r.interimResults=false; r.continuous=true;
+  const r=new SR(); wakeRecognition=r; r.lang='ko-KR'; r.interimResults=false; r.continuous=false;
   $('status').textContent='“뵤니스”라고 불러보세요';
   r.onresult=e=>{
     for(let i=e.resultIndex;i<e.results.length;i++){
       if(!e.results[i].isFinal) continue;
-      const heard=cleanCommand(e.results[i][0].transcript).replace(/\s/g,'');
-      if(/(뵤니스|뵤비스|비오비스|바이오비스)/.test(heard)){
+      const raw=e.results[i][0].transcript.trim();
+      const heard=cleanCommand(raw).replace(/\s/g,'');
+      $('status').textContent='들은 말: '+raw;
+      // 휴대폰 음성인식은 '뵤니스'를 여러 형태로 받아쓸 수 있어 넓게 허용합니다.
+      const wakeHit=/(뵤니스|뵤비스|비오비스|바이오비스|비요니스|비요비스|뵤니|뵤비)/.test(heard)
+        || ((heard.includes('니스')||heard.includes('비스')) && heard.length<=8);
+      if(wakeHit){
+        wakeMode=false;
         stopWakeRecognition();
         commandFromWake=true;
-        $('status').textContent='호출했어요';
-        addMsg('뵤니스','me');
+        $('wakeBtn').textContent='👂 호출 대기 시작';
+        $('status').textContent='호출 인식 성공';
+        addMsg('호출 인식: '+raw,'me');
         speak('네, 아빠. 말씀하세요.',()=>startListening(true));
         return;
       }
+      // 일치하지 않으면 onend에서 자동으로 다시 호출 대기를 시작합니다.
     }
   };
   r.onerror=e=>{ if(e.error==='not-allowed'||e.error==='service-not-allowed'){wakeMode=false;$('wakeBtn').textContent='👂 호출 대기 시작';$('status').textContent='마이크 권한을 허용해주세요';} };
-  r.onend=()=>{ wakeRecognition=null; if(wakeMode && !commandFromWake) setTimeout(startWakeRecognition,500); };
+  r.onend=()=>{ wakeRecognition=null; if(wakeMode && !commandFromWake) setTimeout(startWakeRecognition,900); };
   try{r.start()}catch(e){ if(wakeMode)setTimeout(startWakeRecognition,700); }
 }
 function toggleWakeMode(){
@@ -266,7 +274,7 @@ function startListening(isFollowup=false){
   if(!SR){say('이 브라우저에서는 음성 인식을 지원하지 않아요. 크롬에서 다시 시도해주세요.');return}
   try{ if(recognition) recognition.abort(); }catch(e){}
   recognition=new SR(); recognition.lang='ko-KR'; recognition.interimResults=false; recognition.continuous=false;
-  $('mic').classList.add('listening'); $('status').textContent=isFollowup?'메모 내용을 듣고 있어요…':'듣고 있어요…';
+  $('mic').classList.add('listening'); $('status').textContent=isFollowup?'명령을 말씀하세요…':'듣고 있어요…';
   recognition.onresult=e=>{
     const t=e.results[0][0].transcript.trim(); addMsg(t,'me');
     if(memoCapture){
