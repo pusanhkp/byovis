@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071426">
-<title>뵤비스 BYOVIS v0.7</title>
+<title>뵤비스 BYOVIS v0.8</title>
 <style>
 :root{--bg:#06101f;--card:#0d1c31;--line:#203754;--blue:#42a5ff;--text:#f4f8ff;--muted:#9dafc6;--green:#61dfa9}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 70% 10%,#17355d 0,#081528 32%,#050b15 70%);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;min-height:100vh}
@@ -21,11 +21,13 @@ button.save{border:0;border-radius:12px;padding:0 16px;background:var(--blue);fo
 </style>
 </head>
 <body><main class="app">
-<div class="top"><div></div><div class="logo"><h1>뵤비스</h1><small>BYOVIS v0.7</small></div><div></div></div>
+<div class="top"><div></div><div class="logo"><h1>뵤비스</h1><small>BYOVIS v0.8</small></div><div></div></div>
 <p class="tag">말하면, 기억하고 알아서 일정까지 챙겨주는 개인 비서</p>
 <section class="hero">
 <div class="orb" id="mic" onclick="startListening()"><div class="mic">🎙️</div></div>
 <h2>아빠, 말씀하세요</h2><div class="status" id="status">마이크를 누르면 듣기 시작해요</div>
+<div style="margin-top:12px"><button id="wakeBtn" onclick="toggleWakeMode()" style="border:1px solid var(--line);background:#10243d;color:white;border-radius:14px;padding:11px 16px;font-weight:800">👂 호출 대기 시작</button></div>
+<div class="note" id="wakeNote">웹페이지가 열려 있는 동안 “뵤니스”라고 부르면 응답하도록 실험할 수 있어요.</div>
 </section>
 <div class="grid">
 <div class="card" onclick="openMemo()"><div class="emoji">📝</div><b>기억</b><span>메모와 기억 확인</span></div>
@@ -62,6 +64,53 @@ const $=id=>document.getElementById(id);
 let recognition=null;
 let memoCapture=false;
 let restarting=false;
+let wakeMode=false;
+let wakeRecognition=null;
+let commandFromWake=false;
+
+
+function stopWakeRecognition(){
+  try{ if(wakeRecognition){ wakeRecognition.onend=null; wakeRecognition.abort(); } }catch(e){}
+  wakeRecognition=null;
+}
+function startWakeRecognition(){
+  if(!wakeMode) return;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){wakeMode=false; $('wakeBtn').textContent='👂 호출 대기 시작'; say('이 브라우저에서는 호출 대기를 지원하지 않아요. 크롬에서 다시 시도해주세요.'); return;}
+  stopWakeRecognition();
+  const r=new SR(); wakeRecognition=r; r.lang='ko-KR'; r.interimResults=false; r.continuous=true;
+  $('status').textContent='“뵤니스”라고 불러보세요';
+  r.onresult=e=>{
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(!e.results[i].isFinal) continue;
+      const heard=cleanCommand(e.results[i][0].transcript).replace(/\s/g,'');
+      if(/(뵤니스|뵤비스|비오비스|바이오비스)/.test(heard)){
+        stopWakeRecognition();
+        commandFromWake=true;
+        $('status').textContent='호출했어요';
+        addMsg('뵤니스','me');
+        speak('네, 아빠. 말씀하세요.',()=>startListening(true));
+        return;
+      }
+    }
+  };
+  r.onerror=e=>{ if(e.error==='not-allowed'||e.error==='service-not-allowed'){wakeMode=false;$('wakeBtn').textContent='👂 호출 대기 시작';$('status').textContent='마이크 권한을 허용해주세요';} };
+  r.onend=()=>{ wakeRecognition=null; if(wakeMode && !commandFromWake) setTimeout(startWakeRecognition,500); };
+  try{r.start()}catch(e){ if(wakeMode)setTimeout(startWakeRecognition,700); }
+}
+function toggleWakeMode(){
+  wakeMode=!wakeMode;
+  if(wakeMode){
+    $('wakeBtn').textContent='🟢 호출 대기 중 · 끄기';
+    $('wakeNote').textContent='“뵤니스”라고 부르면 “네, 아빠. 말씀하세요.”라고 대답한 뒤 명령을 들어요.';
+    startWakeRecognition();
+  }else{
+    commandFromWake=false; stopWakeRecognition();
+    $('wakeBtn').textContent='👂 호출 대기 시작';
+    $('wakeNote').textContent='호출 대기가 꺼져 있어요.';
+    $('status').textContent='마이크를 누르면 듣기 시작해요';
+  }
+}
 
 function speak(text, after){
   if(!('speechSynthesis' in window)){ if(after) after(); return; }
@@ -230,7 +279,13 @@ function startListening(isFollowup=false){
     $('status').textContent='다시 마이크를 눌러주세요';
     if(memoCapture && (e.error==='no-speech'||e.error==='aborted')) memoCapture=false;
   };
-  recognition.onend=()=>{$('mic').classList.remove('listening');$('status').textContent='마이크를 누르면 듣기 시작해요'};
+  recognition.onend=()=>{
+    $('mic').classList.remove('listening');
+    const resumeWake=commandFromWake;
+    commandFromWake=false;
+    if(wakeMode && resumeWake){ $('status').textContent='다시 호출을 기다리는 중…'; setTimeout(startWakeRecognition,700); }
+    else $('status').textContent=wakeMode?'“뵤니스”라고 불러보세요':'마이크를 누르면 듣기 시작해요';
+  };
   try{recognition.start()}catch(e){}
 }
 function sendText(){const i=$('text'),t=i.value.trim();if(!t)return;i.value='';addMsg(t,'me');if(memoCapture){memoCapture=false;const d=parseSpokenDate(t);if(d)saveSpokenSchedule(t,d);else saveMemoText(t)}else handleCommand(t)}
